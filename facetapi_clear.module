@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function facetapi_clear_form_facetapi_facet_display_form_alter(&$form, $form_state) {
+  $adapter = $form['#facetapi']['adapter'];
+  $facet = $form['#facetapi']['facet'];
+  $realm = $form['#facetapi']['realm'];
+  $searcher = $adapter->getSearcher();
+  $settings = $adapter->getFacet($facet)->getSettings($realm);
+  $settings = $settings->settings;
+
+  $form['widget']['clear_link'] = array(
+    '#type' => 'select',
+    '#title' => t('Display clear link'),
+    '#default_value' => isset($settings['clear_link']) ? $settings['clear_link'] : '',
+    '#options' => array(
+      '' => t('No link'),
+      'above' => t('Above filters'),
+      'below' => t('Below filters'),
+    ),
+  );
+  $form['widget']['clear_link_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label of clear link'),
+    '#default_value' => isset($settings['clear_link_text']) ? $settings['clear_link_text'] : t('Clear filters'),
+    '#states' => array(
+      'visible' => array(
+        'select[name="clear_link"]' => array('!value' => ''),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function facetapi_clear_block_view_alter(&$data, $block) {
+  switch ($block->module) {
+    case 'facetapi':
+      $facet = $data['content']['#facet'];
+      $adapter = $data['content']['#adapter'];
+      $settings = $data['content']['#settings'];
+      if (empty($settings->settings['clear_link'])) {
+        return;
+      }
+      $items = $adapter->getActiveItems($facet);
+      if (empty($items)) {
+        return;
+      }
+      $item_values = array();
+      foreach ($items as $item) {
+        $item_values[] = $item['value'];
+      }
+
+      $all_link_path = $adapter->getFacetPath($facet, $item_values, TRUE);
+      $all_link_query = $adapter->getQueryString($facet, $item_values, TRUE);
+
+      $data['content']['clear'] = array(
+        '#theme' => 'facetapi_clear_link',
+        '#weight' => $settings->settings['clear_link'] == 'above' ? -10 : 10,
+        '#path' => $all_link_path,
+        '#query' => $all_link_query,
+        '#text' => !empty($settings->settings['clear_link_text']) ? $settings->settings['clear_link_text'] : t('Clear filters'),
+      );
+      break;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function facetapi_clear_theme() {
+  return array(
+    'facetapi_clear_link' => array(
+      'variables' => array(
+        'path' => NULL,
+        'query' => NULL,
+        'text' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Render a clear filter link.
+ */
+function theme_facetapi_clear_link($variables) {
+  return theme('link', array(
+    'text' => $variables['text'],
+    'path' => $variables['path'],
+    'html' => FALSE,
+    'options' => array(
+      'query' => $variables['query'],
+      'html' => FALSE,
+      'attributes' => array('class' => array('facetapi-clear')),
+    ),
+  ));
+}

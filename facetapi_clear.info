@@ -1,0 +1,5 @@
+name = FacetAPI Clear
+description = Provide a clear link on facets.
+dependencies[] = facetapi
+package = custom
+core = 7.x
