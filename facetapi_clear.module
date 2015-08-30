@@ -94,7 +94,7 @@ function theme_facetapi_clear_link($variables) {
     'options' => array(
       'query' => $variables['query'],
       'html' => FALSE,
-      'attributes' => array('class' => array('facetapi-clear')),
+      'attributes' => array('class' => array('facetapi-clear'), 'rel' => 'nofollow'),
     ),
   ));
 }
