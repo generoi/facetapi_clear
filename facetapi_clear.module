@@ -57,13 +57,25 @@ function facetapi_clear_block_view_alter(&$data, $block) {
       $all_link_path = $adapter->getFacetPath($facet, $item_values, TRUE);
       $all_link_query = $adapter->getQueryString($facet, $item_values, TRUE);
 
-      $data['content']['clear'] = array(
+      $link = array(
         '#theme' => 'facetapi_clear_link',
         '#weight' => $settings->settings['clear_link'] == 'above' ? -10 : 10,
         '#path' => $all_link_path,
         '#query' => $all_link_query,
         '#text' => !empty($settings->settings['clear_link_text']) ? $settings->settings['clear_link_text'] : t('Clear filters'),
       );
+
+      $context = array(
+        'facet' => $facet,
+        'adapter' => $adapter,
+        'settings' => $settings,
+        'items' => $items,
+      );
+      drupal_alter('facetapi_clear', $link, $context);
+
+      if (!empty($link)) {
+        $data['content']['clear'] = $link;
+      }
       break;
   }
 }
